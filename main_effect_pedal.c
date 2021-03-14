@@ -52,7 +52,7 @@ AIC23_DATA AIC23_data;
 /* Function prototype */
 
 double* autowah_sbs (double x, double Wb, double MIX, int fs);
-double * unicomb(double x, unsigned int fs, double modfreq, short modtype, float delay, float depth, float BL, float FF, float FB);
+double * unicomb(double x, unsigned int fs, float modfreq, short modtype, float delay, float depth, float BL, float FF, float FB);
 
 /* Global variables */
 
@@ -62,8 +62,6 @@ short fb = 200;               // Width of passband in Hz
 double Wb =  200.0 * 2.0 / 44100.0;       // Calculate normalized passband width
 double MIX = 1.0;
 
-#define SINE 0
-#define NOISE 1
 
 interrupt 
 void intser_McBSP1()
@@ -85,19 +83,19 @@ void intser_McBSP1()
 
 	/* Apply Vibrato filter sample-by-sample */
 
-    //filter_out = *unicomb(new_sample, 44100.0, 5.0, SINE, 0.0, 0.001, 0.0, 1.0, 0.0);
+    //filter_out = *unicomb(new_sample, fs, 5.0, SINE, 0.0, 0.001, 0.0, 1.0, 0.0);
 
 	/* Apply Flanger filter sample-by-sample */
 
-    filter_out = *unicomb(new_sample, 44100.0, 0.1, SINE, 0.015, 0.015, 0.7071, 0.7071, -0.7071);
+    filter_out = *unicomb(new_sample, 44100, 1.0, SINE, 0.000, 0.002, 0.7071, 0.7071, -0.7071);
 
 	/* Apply Chorus filter sample-by-sample */
 
-    //filter_out = *unicomb(new_sample, 44100.0, 5.0, NOISE, 0.002, 0.002, 0.7071, 1.0, 0.7071);
+    //filter_out = *unicomb(new_sample, fs, 5.0, NOISE, 0.002, 0.002, 0.7071, 1.0, 0.7071);
 
 	/* Apply doubling filter sample-by-sample */
 
-    //filter_out = *unicomb(new_sample, 44100.0, 2.0, NOISE, 0.075, 0.075, 0.7071, 0.7071, 0.0);
+    //filter_out = *unicomb(new_sample, fs, 2.0, NOISE, 0.075, 0.075, 0.7071, 0.7071, 0.0);
 
 
 	/* ------------------------ Effects are done here ----------------------------- */

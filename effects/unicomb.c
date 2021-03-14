@@ -26,59 +26,54 @@
  * ======================================================================================================
  */
 
-#include <math.h>
-#include <string.h>
-#include <stdlib.h>
 
-#include "../main.h"
 #include "unicomb.h"
 
-unsigned short n;
-double *delayline, *p_delayline;                // memory allocation for length 10
+double *p_mem = NULL, *delayline;                // memory allocation for length 10
+size_t L_delayline = 0, L_delayline_old = 0;
+
 double *first_delay, *last_delay;
-double modfreq_samples;
+
 double MOD;
 double TAP;
-int i;
 double frac;
 
-double w1[3][2];
-double w2[3][2];
 double x_h, y_uc;
-unsigned int L_delayline = NULL;
-int delay_samples;
-int depth_samples;
-unsigned int FB_delay  =  3;                                     // Fixed delay for feedback path
 
-double * unicomb(double x, unsigned int fs, double modfreq, short modtype, float delay, float depth, float BL, float FF, float FB) {
+unsigned short i, n;
+unsigned short delay_samples;
+unsigned short depth_samples;
+double modfreq_samples;
+unsigned short FB_delay  =  3;                                     // Fixed delay for feedback path
 
+CircularBuffer cbuf;
+
+double * unicomb(double x, unsigned int fs, float modfreq, short modtype, float delay, float depth, float BL, float FF, float FB)
+{
 
     /* Construct delay line */
 
-    if (modtype == 0)
+    if (modtype == SINE)
         delay = depth;
 
-    delay_samples   = round(delay * fs);                // Delay in samples
-    depth_samples   = round(depth * fs);                // Width in samples
+    delay_samples = (unsigned short) round(delay * (float) fs);                // Delay in samples
+    depth_samples = (unsigned short) round(depth * (float) fs);                // Width in samples
     L_delayline = 5 + delay_samples + depth_samples * 2;    // Length of the delay in samples
 
-    if (!delayline) {
-        delayline = (double *) calloc(L_delayline, sizeof(double));
-        first_delay = &delayline[0];
-        last_delay = &delayline[L_delayline -1];
-    }
+    allocateMemory();
+
 
     /* Check for the modulation type: Either a sinusoid or red noise */
 
-    if (modtype == 0) {
+    if (modtype == SINE) {
 
         /* Modulation frequency in samples */
 
-        modfreq_samples  =  modfreq / fs;
+        modfreq_samples  =  modfreq / (float) fs;
 
         /* Generate sine modulation signal */
 
-        MOD = sin(modfreq_samples * 2.0 * 3.14 * n);
+        MOD = sin(modfreq_samples * 2.0 * M_PI * n);
         n = (n + 1) % fs;
     }
 
@@ -97,20 +92,18 @@ double * unicomb(double x, unsigned int fs, double modfreq, short modtype, float
 
     /* Calculate new intermediate value */
 
-    x_h = x + FB * delayline[FB_delay % L_delayline]  ;
+    x_h = x + FB * *cbuf_element(&cbuf, FB_delay)  ;
 
 
     /* Calculate the next output value by applying linear interpolation */
 
-    y_uc = FF * ( frac * delayline[(i + 1) % L_delayline] + (1.0 - frac) * delayline[i % L_delayline] ) + BL * x_h;
+    y_uc = FF * ( frac * *cbuf_element(&cbuf, i + 1) + (1.0 - frac) * *cbuf_element(&cbuf, i) ) + BL * x_h;
 
 
     /* Push new intermediate result into the delay line */
 
-    if (--delayline < first_delay)
-        delayline = last_delay;
-
-    delayline[0] = x_h;
+    cbuf.current--;
+    *cbuf_element(&cbuf, 0) = x_h;
 
     /* Normalize output by L_infinity norm */
 
@@ -120,11 +113,15 @@ double * unicomb(double x, unsigned int fs, double modfreq, short modtype, float
     return &filter_out;
 }
 
-double redNoise() {
+double w1[3][2];
+double w2[3][2];
+
+double redNoise()
+{
 
     double x_n = (double) rand() / 32768.0;
     double y_n;
-    short N_sos = 3;
+    size_t N_sos = 3;
     double sos_redNoise[3][6] = { {3.39488911725442e-05,3.39488911725442e-05,0,1,-0.999362347899025,0},
                                 {1,-1.99999423173329,0.999999999869416,1,-1.99865057683769,0.998651487048053},
                                 {1,-1.99999752581473,1.00000000013059,1,-1.99968270144378,0.999684007735733}};
@@ -148,3 +145,49 @@ double redNoise() {
 
     return y_n;
 }
+
+
+void allocateMemory()
+{
+
+    if (!p_mem) {
+        p_mem = (double *) calloc(L_delayline, sizeof(double));
+        delayline = p_mem;
+
+        L_delayline_old = L_delayline;
+
+        cbuf.array = p_mem;
+        cbuf.length = L_delayline;
+        cbuf.current = 0;
+
+    }
+
+    if (L_delayline != L_delayline_old) {
+        p_mem = (double *) realloc(delayline, L_delayline * sizeof(double));
+        cbuf.length = L_delayline;
+        L_delayline_old = L_delayline;
+    }
+
+    return;
+}
+
+double *cbuf_element(CircularBuffer *cbuf, ptrdiff_t i)
+{
+
+    ptrdiff_t index = i + cbuf->current;
+
+    if (cbuf->length <= index)
+        index -= cbuf->length;
+
+    return &cbuf->array[index];
+}
+
+void cbuf_decrement(CircularBuffer *cbuf) {
+    cbuf->current--;
+
+    return;
+}
+
+
+
+
