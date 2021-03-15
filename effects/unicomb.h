@@ -1,6 +1,4 @@
 
-/* Function prototpye for noise generator function */
-
 #include <stddef.h>
 #include <math.h>
 #include <string.h>
@@ -8,16 +6,23 @@
 
 #include "../main.h"
 
+/* This struct implements a circular buffer which can be accessed by cb_element() */
+
 typedef struct
 {
-    double *array;
+    double array[1000];
     size_t length;
     ptrdiff_t current;
 
 } CircularBuffer;
 
+
+/* Function prototypes */
+
+double *cb_element(CircularBuffer *cb, ptrdiff_t i);
+void cb_decrement(CircularBuffer *cb);
 double redNoise();
 void allocateMemory();
-double *cbuf_element(CircularBuffer *cbuf, ptrdiff_t i);
-void cbuf_decrement(CircularBuffer *cbuf);
+
+
 

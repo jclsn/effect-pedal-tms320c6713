@@ -51,8 +51,8 @@ AIC23_DATA AIC23_data;
 
 /* Function prototype */
 
-double* autowah_sbs (double x, double Wb, double MIX, int fs);
-double * unicomb(double x, unsigned int fs, float modfreq, short modtype, float delay, float depth, float BL, float FF, float FB);
+double *autowah_sbs (double x, double Wb, double MIX, int fs);
+double *unicomb(double x, unsigned int fs, float modfreq, short modtype, float delay, float depth, float BL, float FF, float FB);
 
 /* Global variables */
 
@@ -79,23 +79,23 @@ void intser_McBSP1()
 
 	/* Apply Autowah sample-by-sample */
 
-    //filter_out = *autowah_sbs(new_sample, Wb, MIX, fs);
+    filter_out = *autowah_sbs(new_sample, Wb, MIX, 44100);
 
 	/* Apply Vibrato filter sample-by-sample */
 
-    //filter_out = *unicomb(new_sample, fs, 5.0, SINE, 0.0, 0.001, 0.0, 1.0, 0.0);
+    //filter_out = *unicomb(new_sample, 44100, 5.0, SINE, 0.0, 0.001, 0.0, 1.0, 0.0);
 
 	/* Apply Flanger filter sample-by-sample */
 
-    filter_out = *unicomb(new_sample, 44100, 1.0, SINE, 0.000, 0.002, 0.7071, 0.7071, -0.7071);
+    //filter_out = *unicomb(new_sample, 44100, 1.0, SINE, 0.000, 0.002, 0.7071, 0.7071, -0.7071);
 
 	/* Apply Chorus filter sample-by-sample */
 
-    //filter_out = *unicomb(new_sample, fs, 5.0, NOISE, 0.002, 0.002, 0.7071, 1.0, 0.7071);
+    //filter_out = *unicomb(new_sample, 44100, 5.0, NOISE, 0.030, 0.030, 0.7071, 1.0, 0.7071);
 
 	/* Apply doubling filter sample-by-sample */
 
-    //filter_out = *unicomb(new_sample, fs, 2.0, NOISE, 0.075, 0.075, 0.7071, 0.7071, 0.0);
+    //filter_out = *unicomb(new_sample, 44100, 2.0, NOISE, 0.075, 0.075, 0.7071, 0.7071, 0.0);
 
 
 	/* ------------------------ Effects are done here ----------------------------- */

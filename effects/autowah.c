@@ -17,10 +17,7 @@
  * =====================================================================================
  */
 
-#include <math.h>
-
 #include "autowah.h"
-#include "../main.h"
 
 double s1[3][2];
 double s2[3][2];
@@ -66,9 +63,9 @@ double* autowah_sbs (double x, double Wb, double MIX, int fs) {
 
     /* Scale the envelope to calculate and normalize the center frequency */
 
-    //fc = 100 + y_n * 10000.0;
+    fc = 100 + sqrt(2*y_n) * 7500.0;
 
-    fc = 200 + 2500 * atan(25 * y_n);
+    //fc = 200 + 2500 * atan(25 * y_n);
 
     Wc = fc * (2.0 / 44100.0);
 

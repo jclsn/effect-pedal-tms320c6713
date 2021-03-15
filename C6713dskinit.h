@@ -101,7 +101,7 @@ DSK6713_AIC23_Config config = { \
             /* RZC     1          right channel zero-cross detect: enabled */\
             /* RHV     1111001    right headphone volume: 0 dB */            \
                                                                              \
-    0x0011, /* Set-Up Reg 4       Analog audio path control */               \
+    0x0015, /* Set-Up Reg 4       Analog audio path control */               \
             /* X       0          reserved */                                \
             /* STA     00         sidetone attenuation: -6 dB */             \
             /* STE     0          sidetone: disabled */                      \
