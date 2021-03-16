@@ -1,12 +1,17 @@
 /*C6713dskinit.h Include file for C6713DSK.C */
 
+#define LEFT 1
+#define RIGHT 0
+
 #include "dsk6713.h"
 #include "dsk6713_aic23.h"
 
 union {
 	Uint32 uint;
 	short channel[2];
-	} AIC_data; 
+	} AIC_data;
+
+	static Uint32 CODECEventId, poll;
 
 // This is needed to modify the BSL's data channel McBSP configuration
 // See the changes below
@@ -150,3 +155,12 @@ DSK6713_AIC23_Config config = { \
 
 DSK6713_AIC23_CodecHandle hAIC23_handle;
 
+void c6713_dsk_init();
+void comm_poll();
+void comm_intr();
+void output_sample(int);
+void output_left_sample(short);
+void output_right_sample(short);
+Uint32 input_sample();
+short input_left_sample();
+short input_right_sample();

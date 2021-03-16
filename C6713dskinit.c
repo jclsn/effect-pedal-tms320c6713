@@ -3,6 +3,7 @@
 #define using_bios
 extern Uint32 fs; //sampling frequency
 extern Uint16 inputsource; //input source (MIC or LINE)
+extern AIC23_DATA AIC23_data;
 
 void c6713_dsk_init()
 {
@@ -60,9 +61,9 @@ void comm_intr()
 void output_sample(int out_data)
 {
     short CHANNEL_data;
-    AIC_data.uint=0; //clear data structure
+    AIC23_data.uint=0; //clear data structure
 
-    AIC_data.uint=out_data; //write 32-bit data
+    AIC23_data.uint=out_data; //write 32-bit data
 
     //The existing interface defaults to right channel.
     //To default instead to the left channel and use
@@ -70,35 +71,35 @@ void output_sample(int out_data)
     //In main source program use LEFT 0 and RIGHT 1
     //(opposite of what is used here)
 
-    CHANNEL_data=AIC_data.channel[RIGHT]; //swap channels
-    AIC_data.channel[RIGHT]=AIC_data.channel[LEFT];
-    AIC_data.channel[LEFT]=CHANNEL_data;
+    CHANNEL_data=AIC23_data.channel[RIGHT]; //swap channels
+    AIC23_data.channel[RIGHT]=AIC23_data.channel[LEFT];
+    AIC23_data.channel[LEFT]=CHANNEL_data;
 
     // if polling, wait for ready to transmit
     if (poll) while(!MCBSP_xrdy(DSK6713_AIC23_DATAHANDLE));
         // write data to AIC23 via MCBSP
-        MCBSP_write(DSK6713_AIC23_DATAHANDLE,AIC_data.uint);
+        MCBSP_write(DSK6713_AIC23_DATAHANDLE,AIC23_data.uint);
 }
 
 void output_left_sample(short out_data) //output to left channel
 {
-    AIC_data.uint=0; //clear data structure
-    AIC_data.channel[LEFT]=out_data; //write 16-bit data
+    AIC23_data.uint=0; //clear data structure
+    AIC23_data.channel[LEFT]=out_data; //write 16-bit data
 
     // if polling, wait for ready to transmit
     if (poll) while(!MCBSP_xrdy(DSK6713_AIC23_DATAHANDLE));
         // write data to AIC23 via MCBSP
-        MCBSP_write(DSK6713_AIC23_DATAHANDLE,AIC_data.uint);
+        MCBSP_write(DSK6713_AIC23_DATAHANDLE,AIC23_data.uint);
 }
 void output_right_sample(short out_data)//output to right channel
 {
-    AIC_data.uint=0; //clear data structure
-    AIC_data.channel[RIGHT]=out_data; //write 16-bit data
+    AIC23_data.uint=0; //clear data structure
+    AIC23_data.channel[RIGHT]=out_data; //write 16-bit data
 
     // if polling, wait for ready to transmit
     if (poll) while(!MCBSP_xrdy(DSK6713_AIC23_DATAHANDLE));
         // write data to AIC23 via MCBSP
-        MCBSP_write(DSK6713_AIC23_DATAHANDLE,AIC_data.uint);
+        MCBSP_write(DSK6713_AIC23_DATAHANDLE,AIC23_data.uint);
 }
 
 Uint32 input_sample()
@@ -109,12 +110,12 @@ Uint32 input_sample()
     if (poll) while(!MCBSP_rrdy(DSK6713_AIC23_DATAHANDLE));
     //read data from AIC23 via MCBSP
 
-    AIC_data.uint=MCBSP_read(DSK6713_AIC23_DATAHANDLE);
+    AIC23_data.uint=MCBSP_read(DSK6713_AIC23_DATAHANDLE);
     //Swap left and right channels (see comments in output_sample())
 
-    CHANNEL_data=AIC_data.channel[RIGHT]; //swap channels
-    AIC_data.channel[RIGHT]=AIC_data.channel[LEFT];
-    AIC_data.channel[LEFT]=CHANNEL_data;
+    CHANNEL_data=AIC23_data.channel[RIGHT]; //swap channels
+    AIC23_data.channel[RIGHT]=AIC23_data.channel[LEFT];
+    AIC23_data.channel[LEFT]=CHANNEL_data;
 
-    return(AIC_data.uint);
+    return(AIC23_data.uint);
 }

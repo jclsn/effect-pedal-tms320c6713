@@ -106,9 +106,9 @@ float envelopeDetection(float *x) {
 
     /* Scale the envelope to calculate and normalize the center frequency */
 
-    fc = 100 + sqrt(2*y_n) * 7500.0;
+    //fc = 100 + sqrt(2*y_n) * 7500.0;
 
-    //fc = 200 + 2500 * atan(25 * y_n);
+    fc = 100 + 2500 * atan(4 * sqrt(2*y_n)); // Choosing atan to limit freq. at 2600
 
     return fc;
 }

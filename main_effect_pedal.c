@@ -41,7 +41,7 @@ static Uint32 CODECEventId;
 Uint32 fs=DSK6713_AIC23_FREQ_44KHZ;     //for sampling frequency
 #define MIC 0x0015
 #define LINE 0x0011
-Uint16 inputsource=LINE; // select input
+Uint16 inputsource=MIC; // select input
 
 /* this union allows to store left and right channel 16 bit samples in a 32 bit int */
 
@@ -52,7 +52,6 @@ typedef union {
 
 AIC23_DATA AIC23_data;
 
-/* Function prototype */
 
 
 /* Global variables */
@@ -64,7 +63,7 @@ short fb = 200;               // Width of passband in Hz
 float Wb =  200.0 * 2.0 / 44100.0;       // Calculate normalized passband width
 float MIX = 1.0;
 
-short effect = AUTOWAH;
+short effect = VIBRATO;
 
 interrupt 
 void intser_McBSP1()
@@ -79,39 +78,32 @@ void intser_McBSP1()
 
 	/* ------------------------ Effects are applied here ----------------------------- */
 
-	switch(effect) {
 
         /* Apply Autowah sample-by-sample */
 
-	    case AUTOWAH:
+	    if(effect & AUTOWAH)
             sample = autowah_sbs(sample, Wb, MIX);
-	        break;
 
 	    /* Apply Vibrato filter sample-by-sample */
 
-	    case VIBRATO:
+	    if(effect & VIBRATO)
             sample = unicomb(sample, 5.0, SINE, 0.0, 0.001, 0.0, 1.0, 0.0);
-	        break;
 
 	    /* Apply Flanger filter sample-by-sample */
 
-	    case FLANGER:
+	    if(effect & FLANGER)
             sample = unicomb(sample, 1.0, SINE, 0.00, 0.001, 0.7071, 0.7071, -0.7071);
-            break;
 
 	    /* Apply Chorus filter sample-by-sample */
 
-	    case CHORUS:
+	    if(effect & CHORUS)
             sample = unicomb(sample, 0, NOISE, 0.030, 0.030, 0.7071, 1.0, 0.7071);
-            break;
 
 	    /* Apply doubling filter sample-by-sample */
 
-	    case DOUBLING:
+	    if(effect & DOUBLING)
             sample = unicomb(sample, 0, NOISE, 0.100, 0.100, 0.7071, 0.7071, 0.0);
-            break;
 
-	}
 
 	/* ------------------------ Effects are done here ----------------------------- */
 
@@ -137,6 +129,7 @@ void main()
     // handle(pointer) to codec
     hAIC23_handle=DSK6713_AIC23_openCodec(0, &config);
     DSK6713_AIC23_setFreq(hAIC23_handle, fs);  //set sample rate
+    DSK6713_AIC23_rset(hAIC23_handle, 0x0004, inputsource);
 
     //interface 32 bits toAIC23
     MCBSP_config(DSK6713_AIC23_DATAHANDLE,&AIC23CfgData);
