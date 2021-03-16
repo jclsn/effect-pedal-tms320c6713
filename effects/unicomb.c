@@ -23,49 +23,51 @@
  *   Doubling                 | 0.7071 |   0.7071    |   0.0    | 1-100 ms | 10-100 ms | Red noise
  *   Echo                     | 1.0    |   =< 1.0    | < 1.0    | > 50 ms  |   inf     | Red noise
  *
+ *   Note that the longer the depth and delay, the longer the delay line. The array in autowah.h has
+ *   to be increased accordingly. At this point it is set to support the maximum Doubling effect
+ *   with 100 ms each.
+ *
  * ======================================================================================================
  */
 
 #include "unicomb.h"
 
-double x_h, y_uc;
+float x_h, y_uc;
 
 /* Indexes and delays */
 
 unsigned short i, n;
 unsigned short delay_samples;
 unsigned short depth_samples;
-const unsigned short k_delay  =  3; // Fixed delay for feedback path
+const unsigned short k_delay  =  2; // Fixed delay for feedback path
 
 /* Intermediate results for the biquad filter */
 
-double w1[3][2];
-double w2[3][2];
+float w1[3][2];
+float w2[3][2];
 
 /* Variables for interpolation */
 
-double modfreq_samples;
-double MOD;
-double TAP;
-double frac;
+float modfreq_samples;
+float MOD;
+float TAP;
+float frac;
 
 /* Length of allocated memory and circular buffer structure */
 
 CircularBuffer cb;
 size_t L_delayline = 0, L_delayline_old = 0;
 
-double * unicomb(double x, unsigned int fs, float modfreq, short modtype, float delay, float depth, float BL, float FF, float FB)
+float * unicomb(float *x, float modfreq, short modtype, float delay, float depth, float BL, float FF, float FB)
 {
+    /* Construct the delay line */
 
-
-    /* Construct delay line */
-
-    if (modtype == SINE)
+    if (modtype == SINE) // Necessary for the Vibrato to work
         delay = depth;
 
-    delay_samples = (unsigned short) round(delay * 44100.0);                // Delay in samples
-    depth_samples = (unsigned short) round(depth * 44100.0);                // Width in samples
-    L_delayline = 5 + delay_samples + depth_samples * 2;    // Length of the delay in samples
+    delay_samples = (unsigned short) round(delay * (float) Fs);    // Delay in samples
+    depth_samples = (unsigned short) round(depth * (float) Fs);    // Width in samples
+    L_delayline = 2 + delay_samples + depth_samples * 2;           // Length of the delay in samples
     allocateMemory();
 
     /* Check for the modulation type: Either a sinusoid or red noise */
@@ -74,16 +76,16 @@ double * unicomb(double x, unsigned int fs, float modfreq, short modtype, float 
 
         /* Modulation frequency in samples */
 
-        modfreq_samples  =  modfreq / 44100.0;
+        modfreq_samples  =  modfreq / (float) Fs;
 
         /* Generate sine modulation signal */
 
-        MOD = sin(modfreq_samples * 2.0 * 3.14 * n);
-        n = (n + 1) % fs;
+        MOD = sin(modfreq_samples * 2.0 * M_PI * n);
+        n = (n + 1) % Fs;
     }
 
     else {
-        double noise = redNoise();
+        float noise = redNoise();
         MOD = noise;
     }
 
@@ -95,7 +97,7 @@ double * unicomb(double x, unsigned int fs, float modfreq, short modtype, float 
 
     /* Calculate new intermediate value */
 
-    x_h = x + FB * *cb_element(&cb, k_delay)  ;
+    x_h = *x + FB * *cb_element(&cb, k_delay)  ;
 
     /* Calculate the next output value by applying linear interpolation */
 
@@ -103,30 +105,43 @@ double * unicomb(double x, unsigned int fs, float modfreq, short modtype, float 
 
     /* Push new intermediate result into the delay line */
 
-    cb.current--;
+    cb_decrement(&cb);
     *cb_element(&cb, 0) = x_h;
 
-    /* Normalize output by L_infinity norm */
+    /*
+     *  Normalize output by L_infinity norm.
+     *  In case of the Chorus the gain has to
+     *  be drastically reduced to avoid clipping
+     *  Needs improvement!
+     */
 
-    double L_inf = 1.0 / fabs( 1.0 - 1.0 * (3*FF ));
-    filter_out = y_uc * L_inf;
+    float L_inf;
 
-    return &filter_out;
+    if(effect == CHORUS)
+        L_inf = 1.0 / fabs( 1.0 - 1.0 * (6*FF ));
+
+    else
+        L_inf = 1.0 / fabs( 1.0 - 1.0 * (3*FF ));
+
+    OUT = y_uc * L_inf;
+
+    return &OUT;
 }
 
 
-double redNoise()
+float redNoise()
 {
 
     /* Generate random floats and lowpass filter them with a 2-Hz cutoff frequency */
 
-    double x_n = (double) rand() / 32768.0;
-    double y_n;
+    float x_n = (float) rand() / 32768.0;
+    float y_n;
     size_t N_biquad = 3;
 
-    double biquad_redNoise[3][6] = { {3.39488911725442e-05, 3.39488911725442e-05, 0, 1, -0.999362347899025, 0},
-                                     {1, -1.99999423173329, 0.999999999869416, 1, -1.99865057683769, 0.998651487048053},
-                                     {1, -1.99999752581473, 1.00000000013059, 1, -1.99968270144378, 0.999684007735733}};
+    double biquad_redNoise[3][6] =
+    { {3.39488911725442e-05, 3.39488911725442e-05, 0, 1, -0.999362347899025, 0},
+    {1, -1.99999423173329, 0.999999999869416, 1, -1.99865057683769, 0.998651487048053},
+    {1, -1.99999752581473, 1.00000000013059, 1, -1.99968270144378, 0.999684007735733}};
 
     /* Filter the noise with a biquad structure to create red noise */
 
@@ -156,14 +171,16 @@ void allocateMemory()
 {
 
     /* 
-     * Allocate memory for the delayline
-     * Check first if memory was already
+     *  Allocate memory for the delayline.
+     *  Dynamic allocation does not work, so a fixed-length array
+     *  is defined in unicomb.h. Might need to be extended for
+     *  other effects.
      */
 
     if (!L_delayline_old) {
         L_delayline_old = L_delayline;
 
-        //cb.array = calloc(L_delayline, sizeof(double));
+        //cb.array = calloc(L_delayline, sizeof(float));
 
         //if(cb.array == NULL)
         //    exit(1);
@@ -174,12 +191,12 @@ void allocateMemory()
     }
 
     /* 
-     * Check if the paremeters have been changed and the
-     * delayline has to be extended (or can be shortened)
+     *  Check if the paremeters have been changed and the
+     *  delayline has to be extended (or can be shortened)
      */
 
     //if (L_delayline != L_delayline_old) {
-    //    cb.array = (double *) realloc(cb.array, L_delayline * sizeof(double));
+    //    cb.array = (float *) realloc(cb.array, L_delayline * sizeof(float));
     //    cb.length = L_delayline;
     //    L_delayline_old = L_delayline;
     //}
@@ -187,12 +204,20 @@ void allocateMemory()
     return;
 }
 
-double *cb_element(CircularBuffer *cb, ptrdiff_t i)
+/*
+ *  Function to access an element in the circular buffer
+ *  as if it was an array. E.g. to access an element with
+ *  index i, call cb_element(&cb, i)
+ */
+
+float *cb_element(CircularBuffer *cb, ptrdiff_t i)
 {
     
     /* 
-     *  If current value is less that wrap it 
-     *  around to the last element 
+     *  If current value is less that wrap it
+     *  around to the last element in case the
+     *  current index decremented without
+     *  cb_decrement()
      */
 
     if (cb->current < 0)
@@ -202,8 +227,10 @@ double *cb_element(CircularBuffer *cb, ptrdiff_t i)
 
     ptrdiff_t index = cb->current + i;
 
-    /* If the relative index is greater than the 
-     *      * array size, wrap it around as well */
+    /*
+     *  If the relative index is greater than the
+     *  array size, wrap it around as well
+     */
 
     if ((size_t) index >= cb->length)
                 index -= cb->length;
@@ -211,6 +238,11 @@ double *cb_element(CircularBuffer *cb, ptrdiff_t i)
     return &cb->array[index];
 
 }
+
+/*
+ *  Function to decrement the current
+ *  index of the circular buffer orderly
+ */
 
 void cb_decrement(CircularBuffer *cb)
 {

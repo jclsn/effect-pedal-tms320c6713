@@ -39,6 +39,9 @@
 extern MCBSP_Handle DSK6713_AIC23_DATAHANDLE;
 static Uint32 CODECEventId;
 Uint32 fs=DSK6713_AIC23_FREQ_44KHZ;     //for sampling frequency
+#define MIC 0x0015
+#define LINE 0x0011
+Uint16 inputsource=LINE; // select input
 
 /* this union allows to store left and right channel 16 bit samples in a 32 bit int */
 
@@ -51,17 +54,17 @@ AIC23_DATA AIC23_data;
 
 /* Function prototype */
 
-double *autowah_sbs (double x, double Wb, double MIX, int fs);
-double *unicomb(double x, unsigned int fs, float modfreq, short modtype, float delay, float depth, float BL, float FF, float FB);
 
 /* Global variables */
 
-double new_sample;
-double filter_out;
+unsigned int Fs = 44100;
+float IN, OUT;
+float *sample = &IN;
 short fb = 200;               // Width of passband in Hz
-double Wb =  200.0 * 2.0 / 44100.0;       // Calculate normalized passband width
-double MIX = 1.0;
+float Wb =  200.0 * 2.0 / 44100.0;       // Calculate normalized passband width
+float MIX = 1.0;
 
+short effect = AUTOWAH;
 
 interrupt 
 void intser_McBSP1()
@@ -72,39 +75,52 @@ void intser_McBSP1()
 
 	/* Convert new sample to float */
 
-	new_sample = (double) AIC23_data.channel[LEFT] / 32768;
-
+	*sample =  (float) AIC23_data.channel[LEFT] / 32768;
 
 	/* ------------------------ Effects are applied here ----------------------------- */
 
-	/* Apply Autowah sample-by-sample */
+	switch(effect) {
 
-    filter_out = *autowah_sbs(new_sample, Wb, MIX, 44100);
+        /* Apply Autowah sample-by-sample */
 
-	/* Apply Vibrato filter sample-by-sample */
+	    case AUTOWAH:
+            sample = autowah_sbs(sample, Wb, MIX);
+	        break;
 
-    //filter_out = *unicomb(new_sample, 44100, 5.0, SINE, 0.0, 0.001, 0.0, 1.0, 0.0);
+	    /* Apply Vibrato filter sample-by-sample */
 
-	/* Apply Flanger filter sample-by-sample */
+	    case VIBRATO:
+            sample = unicomb(sample, 5.0, SINE, 0.0, 0.001, 0.0, 1.0, 0.0);
+	        break;
 
-    //filter_out = *unicomb(new_sample, 44100, 1.0, SINE, 0.000, 0.002, 0.7071, 0.7071, -0.7071);
+	    /* Apply Flanger filter sample-by-sample */
 
-	/* Apply Chorus filter sample-by-sample */
+	    case FLANGER:
+            sample = unicomb(sample, 1.0, SINE, 0.00, 0.001, 0.7071, 0.7071, -0.7071);
+            break;
 
-    //filter_out = *unicomb(new_sample, 44100, 5.0, NOISE, 0.030, 0.030, 0.7071, 1.0, 0.7071);
+	    /* Apply Chorus filter sample-by-sample */
 
-	/* Apply doubling filter sample-by-sample */
+	    case CHORUS:
+            sample = unicomb(sample, 0, NOISE, 0.030, 0.030, 0.7071, 1.0, 0.7071);
+            break;
 
-    //filter_out = *unicomb(new_sample, 44100, 2.0, NOISE, 0.075, 0.075, 0.7071, 0.7071, 0.0);
+	    /* Apply doubling filter sample-by-sample */
 
+	    case DOUBLING:
+            sample = unicomb(sample, 0, NOISE, 0.100, 0.100, 0.7071, 0.7071, 0.0);
+            break;
+
+	}
 
 	/* ------------------------ Effects are done here ----------------------------- */
 
+	OUT = *sample;
 
     /* Write filter output to AIC23 strucute, left and right channel */
 
-    AIC23_data.channel[LEFT] = (short) floor(filter_out * 32768.0);
-    AIC23_data.channel[RIGHT] = (short) floor(filter_out * 32768.0);;
+    AIC23_data.channel[LEFT] = (short) floor(OUT * 32768.0);
+    AIC23_data.channel[RIGHT] = (short) floor(OUT * 32768.0);;
 
     /* Write data to line and headphone output */
 

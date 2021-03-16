@@ -10,7 +10,7 @@
 
 typedef struct
 {
-    double array[1000];
+    float array[13232];
     size_t length;
     ptrdiff_t current;
 
@@ -19,9 +19,10 @@ typedef struct
 
 /* Function prototypes */
 
-double *cb_element(CircularBuffer *cb, ptrdiff_t i);
+float *cb_element(CircularBuffer *cb, ptrdiff_t i);
 void cb_decrement(CircularBuffer *cb);
-double redNoise();
+void cb_increment(CircularBuffer *cb);
+float redNoise();
 void allocateMemory();
 
 

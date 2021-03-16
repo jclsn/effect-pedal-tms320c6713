@@ -19,20 +19,20 @@
 
 #include "autowah.h"
 
-double s1[3][2];
-double s2[3][2];
+float s1[3][2];
+float s2[3][2];
 double sos_smooth[2][6] = {{0.00718491019141383,  0.00718491019141383, 0,                   1, -0.999725227879379, 0},
                           {0.00718491019141383, -0.0143698191841365 , 0.00718491019141383, 1, -1.99982839868153,  0.999828461367708}};
 short N_sos = 2;
-double c = 1.0, d, c_old = 0.0;
-double xh[2] = {0, 0};
-double xh_new = 0.0;
-double ap_y;
-double y, x_n, y_n, Wc, fc;
+float c = 1.0, d, c_old = 0.0;
+float xh[2] = {0, 0};
+float xh_new = 0.0;
+float ap_y;
+float y, x_n, y_n, Wc, fc;
 short k;
 
 
-double* autowah_sbs (double x, double Wb, double MIX, int fs) {
+float *autowah_sbs (float *x, float Wb, float MIX) {
 
     /*
      *  y = wahmix-sbs (x, Wc, Wb, MIX)
@@ -42,9 +42,52 @@ double* autowah_sbs (double x, double Wb, double MIX, int fs) {
      *  MIX is the mixing factor (max = 1)
      */
 
+    fc = envelopeDetection(x);
+
+    Wc = fc * (2.0 / (float) Fs);
+
+    /* Bandpass width parameter calculation */
+
+    if(c != c_old) {
+        c = ( tan (M_PI * Wb / 2.0) - 1.0) / ( tan ( M_PI * Wb / 2.0 ) + 1.0 );
+        c_old = c;
+    }
+
+    /* Center frequency parameter calculation */
+
+    d = ( -cos ( M_PI * Wc ));
+
+   /* Calculate next xh value and allpass output */
+
+    xh_new = (float) ( *x          - d * ( 1.0 - c ) * xh[0] + c * xh[1] );
+    ap_y   = (float) (-c * xh_new + d * ( 1.0 - c ) * xh[0] + xh[1]   );
+
+    /* Add new delay to delay vector and shift old delay by one */
+
+    xh[1] = xh[0];
+    xh[0] = xh_new;
+
+    /* Subtract the allpass output from the input to produce a bandpassed output */
+
+    y = 0.5 * (*x - ap_y);
+
+    /* Apply mixing factor to input and output */
+
+    *x = *x * (1.0 - MIX);
+    y = y * MIX;
+
+    OUT = 1.2 * (*x + y);
+
+    return &OUT;
+}
+
+
+float envelopeDetection(float *x) {
+
+
     /* Envelope detection algorithm */
 
-    x_n = x*x; /* Square the input */
+    x_n = *x**x; /* Square the input */
 
     for (k = 0; k < N_sos; k++) {
 
@@ -67,40 +110,5 @@ double* autowah_sbs (double x, double Wb, double MIX, int fs) {
 
     //fc = 200 + 2500 * atan(25 * y_n);
 
-    Wc = fc * (2.0 / 44100.0);
-
-    /* Bandpass width parameter calculation */
-
-    if(c != c_old) {
-        c = ( tan (M_PI * Wb / 2.0) - 1.0) / ( tan ( M_PI * Wb / 2.0 ) + 1.0 );
-        c_old = c;
-    }
-
-    /* Center frequency parameter calculation */
-
-    d = ( -cos ( M_PI * Wc ));
-
-   /* Calculate next xh value and allpass output */
-
-    xh_new = (double) ( x          - d * ( 1.0 - c ) * xh[0] + c * xh[1] );
-    ap_y   = (double) (-c * xh_new + d * ( 1.0 - c ) * xh[0] + xh[1]   );
-
-    /* Add new delay to delay vector and shift old delay by one */
-
-    xh[1] = xh[0];
-    xh[0] = xh_new;
-
-    /* Subtract the allpass output from the input to produce a bandpassed output */
-
-    y = 0.5 * (x - ap_y);
-
-    /* Apply mixing factor to input and output */
-
-    x = x * (1.0 - MIX);
-    y = y * MIX;
-
-    filter_out = x + y;
-
-    return &filter_out;
+    return fc;
 }
-
