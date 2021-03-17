@@ -41,7 +41,6 @@ static Uint32 CODECEventId;
 Uint32 fs=DSK6713_AIC23_FREQ_44KHZ;     //for sampling frequency
 #define MIC 0x0015
 #define LINE 0x0011
-Uint16 inputsource=MIC; // select input
 
 /* this union allows to store left and right channel 16 bit samples in a 32 bit int */
 
@@ -57,13 +56,14 @@ AIC23_DATA AIC23_data;
 /* Global variables */
 
 unsigned int Fs = 44100;
-float IN, OUT;
+float IN = 0, OUT = 0;
 float *sample = &IN;
 short fb = 200;               // Width of passband in Hz
 float Wb =  200.0 * 2.0 / 44100.0;       // Calculate normalized passband width
 float MIX = 1.0;
 
-short effect = VIBRATO;
+Uint16 inputsource = LINE;
+short effect = AUTOWAH;
 
 interrupt 
 void intser_McBSP1()

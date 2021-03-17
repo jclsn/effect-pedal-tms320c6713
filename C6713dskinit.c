@@ -3,7 +3,7 @@
 #define using_bios
 extern Uint32 fs; //sampling frequency
 extern Uint16 inputsource; //input source (MIC or LINE)
-extern AIC23_DATA AIC23_data;
+extern AIC23DATA AIC23_data;
 
 void c6713_dsk_init()
 {
