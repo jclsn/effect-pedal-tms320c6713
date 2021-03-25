@@ -62,7 +62,7 @@ short fb = 200;               // Width of passband in Hz
 float Wb =  200.0 * 2.0 / 44100.0;       // Calculate normalized passband width
 float MIX = 1.0;
 
-Uint16 inputsource = LINE;
+Uint16 inputsource = MIC;
 short effect = AUTOWAH;
 
 interrupt 
@@ -92,12 +92,16 @@ void intser_McBSP1()
 	    /* Apply Flanger filter sample-by-sample */
 
 	    if(effect & FLANGER)
-            sample = unicomb(sample, 1.0, SINE, 0.00, 0.001, 0.7071, 0.7071, -0.7071);
+            sample = unicomb(sample, 1.0, SINE, 0.00, 0.001, 0.7071, 0.7071, 0.7071);
 
 	    /* Apply Chorus filter sample-by-sample */
 
 	    if(effect & CHORUS)
-            sample = unicomb(sample, 0, NOISE, 0.030, 0.030, 0.7071, 1.0, 0.7071);
+            sample = unicomb(sample, 0, NOISE, 0.030, 0.030, 0.7071, 1.0, 0);
+	    /* Apply Chorus filter sample-by-sample */
+
+	    if(effect & WHITECHORUS)
+            sample = unicomb(sample, 0, NOISE, 0.030, 0.030, 0.7071, 1.0, -0.7071);
 
 	    /* Apply doubling filter sample-by-sample */
 

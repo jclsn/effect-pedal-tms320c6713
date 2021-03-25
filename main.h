@@ -5,11 +5,12 @@
 
 /* Effect types */
 
-#define AUTOWAH  1
-#define VIBRATO  2
-#define FLANGER  4
-#define CHORUS   8
-#define DOUBLING 16
+#define AUTOWAH        1
+#define VIBRATO        2
+#define FLANGER        4
+#define CHORUS         8
+#define WHITECHORUS    16
+#define DOUBLING       32
 
 /* Modulation type for Unicomb filter */
 
