@@ -19,10 +19,13 @@
 
 #include "autowah.h"
 
-float s1[3][2];
-float s2[3][2];
-double sos_smooth[2][6] = {{0.00718491019141383,  0.00718491019141383, 0,                   1, -0.999725227879379, 0},
-                          {0.00718491019141383, -0.0143698191841365 , 0.00718491019141383, 1, -1.99982839868153,  0.999828461367708}};
+float s1[3][2] = {{0,0},{0,0}, {0,0}};
+float s2[3][2] = {{0,0},{0,0}, {0,0}};
+double sos_smooth[2][6] = {{0.00274744503976745,0.00274744503976746,0,
+                           1,-0.999851125671488,0},
+                           {0.00274744503976745,-0.00549488912344515,0.00274744503976745,
+                           1,-1.99986620067095,0.999866235961518}};
+
 short N_sos = 2;
 float c = 1.0, d, c_old = 0.0;
 float xh[2] = {0, 0};
@@ -76,7 +79,7 @@ float *autowah_sbs (float *x, float Wb, float MIX) {
     *x = *x * (1.0 - MIX);
     y = y * MIX;
 
-    OUT = 3.5 * (*x + y);
+    OUT = 1.5 * (*x + y);
 
     return &OUT;
 }
@@ -107,8 +110,8 @@ float envelopeDetection(float *x) {
     /* Scale the envelope to calculate and normalize the center frequency */
 
 
-    //fc = 100 + 2500 * 4 * sqrt(2*y_n);
-    fc = 100 + 2500 * atan(4 * sqrt(2*y_n)); // Choosing atan to limit freq. at 2600
+    //fc = 100 + 2500 * 2 * sqrt(2*y_n);
+    fc = 200 + 2500 * atan(2 * sqrt(2*y_n)); // Choosing atan to limit freq. at 2600
 
     return fc;
 }
