@@ -36,7 +36,8 @@ float x_h, y_uc;
 
 /* Indexes and delays */
 
-unsigned short i, n;
+unsigned short i;
+unsigned int   n;
 unsigned short delay_samples;
 unsigned short depth_samples;
 const unsigned short k_delay  =  2; // Fixed delay for feedback path
