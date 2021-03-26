@@ -118,13 +118,16 @@ float * unicomb(float *x, float modfreq, short modtype, float delay, float depth
 
     float L_inf;
 
-    if(effect == CHORUS)
-        L_inf = 1.0 / fabs( 1.0 - 1.0 * (6*FF ));
+    if(effect == FLANGER)
+        L_inf =  fabs( 1.0 - FF) / (BL+FB);
 
+
+    if(effect == VIBRATO)
+        OUT = y_uc ;
+    else if(effect == FLANGER)
+        OUT = y_uc * L_inf;
     else
-        L_inf = 1.0 / fabs( 1.0 - 1.0 * (3*FF ));
-
-    OUT = y_uc * L_inf;
+        OUT = y_uc * 0.5;
 
     return &OUT;
 }

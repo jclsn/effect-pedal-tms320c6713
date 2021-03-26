@@ -79,7 +79,7 @@ float *autowah_sbs (float *x, float Wb, float MIX) {
     *x = *x * (1.0 - MIX);
     y = y * MIX;
 
-    OUT = 1.5 * (*x + y);
+    OUT = 1.0 * (*x + y);
 
     return &OUT;
 }
