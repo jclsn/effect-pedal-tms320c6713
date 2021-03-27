@@ -50,6 +50,8 @@ float w2[3][2];
 /* Variables for interpolation */
 
 float modfreq_samples;
+float modfreq_old = 0;
+float period_samples;
 float MOD;
 float TAP;
 float frac;
@@ -63,8 +65,11 @@ float * unicomb(float *x, float modfreq, short modtype, float delay, float depth
 {
     /* Construct the delay line */
 
-    if (modtype == SINE) // Necessary for the Vibrato to work
-        delay = depth;
+    //if (modtype == SINE) // Necessary for the Vibrato to work
+    //    delay = depth;
+
+    //if (modtype == REDNOISE) // Necessary for the Vibrato to work
+    //    depth = depth * 2;
 
     delay_samples = (unsigned short) round(delay * (float) Fs);    // Delay in samples
     depth_samples = (unsigned short) round(depth * (float) Fs);    // Width in samples
@@ -73,21 +78,37 @@ float * unicomb(float *x, float modfreq, short modtype, float delay, float depth
 
     /* Check for the modulation type: Either a sinusoid or red noise */
 
-    if (modtype == SINE) {
-
+    if(modfreq != modfreq_old) {
         /* Modulation frequency in samples */
-
         modfreq_samples  =  modfreq / (float) Fs;
+        period_samples  =  ceil(1/modfreq_samples);
+        modfreq_old = modfreq;
+    }
+
+    if (modtype == SINE) {
 
         /* Generate sine modulation signal */
 
-        MOD = sin(modfreq_samples * 2.0 * M_PI * n);
-        n = (n + 1) % Fs;
+        MOD = 0.5 + 0.5 *sin(modfreq_samples * 2.0 * M_PI * n);
+        n = (n + 1) % (unsigned int) period_samples;
     }
 
-    else {
+    else if (modtype == SINE3) {
+
+        /* Generate sine modulation signal */
+
+        MOD = 0.5 + 0.5 * pow(sin(modfreq_samples * 2.0 * M_PI * n), 3);
+        n = (n + 1) % (unsigned int)  period_samples;
+    }
+
+    else if (modtype == REDNOISE){
         float noise = redNoise();
-        MOD = noise;
+        MOD = 2 * noise;
+    }
+
+    else if (modtype == HARMONICNOISE){
+        MOD = 0.5 + 0.5 * harmonic_noise(n, modfreq_samples);
+        n = (n + 1) % (unsigned int) period_samples;
     }
 
     /* Calculate frac coefficent for interpolation */
@@ -170,6 +191,20 @@ float redNoise()
     return y_n;
 }
 
+float harmonic_noise(unsigned int n, float f) {
+
+    short N = 5;
+
+    float y;
+
+    short k;
+    for (k = 0; k < N; ++k) {
+
+        y += sin(2*M_PI*f*(2^k)*n);
+    }
+
+    return  y /N ;
+}
 
 void allocateMemory()
 {

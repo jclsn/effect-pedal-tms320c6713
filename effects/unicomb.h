@@ -25,5 +25,6 @@ void cb_increment(CircularBuffer *cb);
 float redNoise();
 void allocateMemory();
 
+float harmonic_noise(unsigned int n, float f);
 
 

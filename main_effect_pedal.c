@@ -91,21 +91,21 @@ void intser_McBSP1()
 	    /* Apply Flanger filter sample-by-sample */
 
 	    if(effect & FLANGER)
-            sample = unicomb(sample, 1.0, SINE, 0.001, 0.002, 0.7071, 0.7071, 0.7071);
+            sample = unicomb(sample, 0.5, SINE, 0.001, 0.002, 0.7071, 0.7071, 0.7071);
 
 	    /* Apply Chorus filter sample-by-sample */
 
 	    if(effect & CHORUS)
-            sample = unicomb(sample, 0, NOISE, 0.030, 0.030, 0.7071, 1.0, 0);
+            sample = unicomb(sample, 0.15, HARMONICNOISE, 0.015, 0.015, 0.7071, 1.0, 0);
 	    /* Apply Chorus filter sample-by-sample */
 
 	    if(effect & WHITECHORUS)
-            sample = unicomb(sample, 0, NOISE, 0.030, 0.030, 0.7071, 1.0, -0.7071);
+            sample = unicomb(sample, 0.15, HARMONICNOISE, 0.015, 0.015, 0.7071, 1.0, -0.7071);
 
 	    /* Apply doubling filter sample-by-sample */
 
 	    if(effect & DOUBLING)
-            sample = unicomb(sample, 0, NOISE, 0.100, 0.100, 0.7071, 0.7071, 0.0);
+            sample = unicomb(sample, 0, REDNOISE, 0.100, 0.100, 0.7071, 0.7071, 0.0);
 
 
 	/* ------------------------ Effects are done here ----------------------------- */

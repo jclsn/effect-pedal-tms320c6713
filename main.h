@@ -15,7 +15,9 @@
 /* Modulation type for Unicomb filter */
 
 #define SINE 0
-#define NOISE 1
+#define SINE3 1
+#define REDNOISE 2
+#define HARMONICNOISE 4
 
 /* Global variables */
 
