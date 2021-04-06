@@ -81,7 +81,7 @@ void intser_McBSP1()
         /* Apply Autowah sample-by-sample */
 
 	    if(effect & AUTOWAH)
-            sample = autowah_sbs(sample, Wb, MIX);
+            sample = autowah_sbs (sample, 200, 200, 2500, /*SENSE:*/ 2.0, /* GAIN:*/1.0, /*MIX*/ 0.9);
 
 	    /* Apply Vibrato filter sample-by-sample */
 
@@ -91,7 +91,7 @@ void intser_McBSP1()
 	    /* Apply Flanger filter sample-by-sample */
 
 	    if(effect & FLANGER)
-            sample = unicomb(sample, 0.5, SINE, 0.001, 0.002, 0.7071, 0.7071, 0.7071);
+            sample = unicomb(sample, 0.1, SINE, 0.000, 0.001, 0.7071, 0.7071, 0.7071);
 
 	    /* Apply Chorus filter sample-by-sample */
 
@@ -100,7 +100,7 @@ void intser_McBSP1()
 	    /* Apply Chorus filter sample-by-sample */
 
 	    if(effect & WHITECHORUS)
-            sample = unicomb(sample, 0.15, HARMONICNOISE, 0.015, 0.015, 0.7071, 1.0, -0.7071);
+            sample = unicomb(sample, 0.10, SINE3, 0.005, 0.025, 0.7071, 1.0, -0.7071);
 
 	    /* Apply doubling filter sample-by-sample */
 

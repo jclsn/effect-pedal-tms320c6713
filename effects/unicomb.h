@@ -19,12 +19,11 @@ typedef struct
 
 /* Function prototypes */
 
-float *cb_element(CircularBuffer *cb, ptrdiff_t i);
-void cb_decrement(CircularBuffer *cb);
-void cb_increment(CircularBuffer *cb);
-float redNoise();
-void allocateMemory();
-
-float harmonic_noise(unsigned int n, float f);
+static inline float *cb_element(CircularBuffer *cb, ptrdiff_t i);
+static inline void cb_decrement(CircularBuffer *cb);
+static inline void cb_increment(CircularBuffer *cb);
+static inline float redNoise();
+static inline void allocateMemory();
+static inline float harmonic_noise(unsigned int n, float f);
 
 

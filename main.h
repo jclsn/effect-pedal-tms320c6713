@@ -27,6 +27,6 @@ extern unsigned int Fs;
 
 /* Function prototype */
 
-float *autowah_sbs (float *x, float Wb, float MIX);
+float *autowah_sbs (float *x, float WIDTH, float pedalLow, float pedalHigh, float SENSITIVITY, float GAIN, float MIX);
 float *unicomb(float *x, float modfreq, short modtype, float delay, float depth, float BL, float FF, float FB);
 

@@ -137,24 +137,15 @@ float * unicomb(float *x, float modfreq, short modtype, float delay, float depth
      *  Needs improvement!
      */
 
-    float L_inf;
+    float L_inf = 1 / (( BL + ((BL * FB) + FF - FB)) / (1 - FB) );
 
-    if(effect == FLANGER)
-        L_inf =  fabs( 1.0 - FF) / (BL+FB);
-
-
-    if(effect == VIBRATO)
-        OUT = y_uc ;
-    else if(effect == FLANGER)
-        OUT = y_uc * L_inf;
-    else
-        OUT = y_uc * 0.5;
+    OUT = y_uc * L_inf;
 
     return &OUT;
 }
 
 
-float redNoise()
+static inline float redNoise()
 {
 
     /* Generate random floats and lowpass filter them with a 2-Hz cutoff frequency */
@@ -191,7 +182,7 @@ float redNoise()
     return y_n;
 }
 
-float harmonic_noise(unsigned int n, float f) {
+static inline float harmonic_noise(unsigned int n, float f) {
 
     short N = 5;
 
@@ -206,7 +197,7 @@ float harmonic_noise(unsigned int n, float f) {
     return  y /N ;
 }
 
-void allocateMemory()
+static inline void allocateMemory()
 {
 
     /* 
@@ -249,7 +240,7 @@ void allocateMemory()
  *  index i, call cb_element(&cb, i)
  */
 
-float *cb_element(CircularBuffer *cb, ptrdiff_t i)
+static inline float *cb_element(CircularBuffer *cb, ptrdiff_t i)
 {
     
     /* 
@@ -283,7 +274,7 @@ float *cb_element(CircularBuffer *cb, ptrdiff_t i)
  *  index of the circular buffer orderly
  */
 
-void cb_decrement(CircularBuffer *cb)
+static inline void cb_decrement(CircularBuffer *cb)
 {
     cb->current--;
 
