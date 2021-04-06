@@ -5,4 +5,4 @@
 
 extern float y, Wb;
 
-float envelopeDetection(float *x);
+static inline float envelopeDetection(float *x, float pedalLow, float pedalHigh, float SENSITIVITY);

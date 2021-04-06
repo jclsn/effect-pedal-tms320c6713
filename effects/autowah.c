@@ -18,14 +18,12 @@
  */
 
 #include "autowah.h"
+#include "smoothing_filter.h"
 
-float s1[3][2] = {{0,0},{0,0}, {0,0}};
-float s2[3][2] = {{0,0},{0,0}, {0,0}};
-double sos_smooth[2][6] = {{0.0999870080623928, -0.199973828132026, 0.0999870080158827, 1,  -1.99961389509767,  0.999613953168442},
-                            {0.0999870080623928, -0.199973980385292, 0.0999870081089034, 1,  -1.99986523255647,  0.999865342549686}};
+float v1[4][2] = {{0,0},{0,0}, {0,0}, {0,0}};
+float v2[4][2] = {{0,0},{0,0}, {0,0}, {0,0}};
 
-short N_sos = 2;
-float c = 1.0, d, c_old = 0.0;
+float c = 1.0, d, WIDTH_old = 0.0;
 float xh[2] = {0, 0};
 float xh_new = 0.0;
 float ap_y;
@@ -33,7 +31,7 @@ float y, x_n, y_n, Wc, fc;
 short k;
 
 
-float *autowah_sbs (float *x, float Wb, float MIX) {
+float *autowah_sbs (float *x, float WIDTH, float pedalLow, float pedalHigh, float SENSITIVITY, float GAIN, float MIX) {
 
     /*
      *  y = wahmix-sbs (x, Wc, Wb, MIX)
@@ -43,15 +41,18 @@ float *autowah_sbs (float *x, float Wb, float MIX) {
      *  MIX is the mixing factor (max = 1)
      */
 
-    fc = envelopeDetection(x);
+    //GAIN = pow(10, GAIN/20);
+    fc = envelopeDetection(x, pedalLow, pedalHigh, SENSITIVITY);
 
     Wc = fc * (2.0 / (float) Fs);
 
     /* Bandpass width parameter calculation */
 
-    if(c != c_old) {
+    if(WIDTH != WIDTH_old) {
+        Wb = WIDTH * (2.0 / (float) Fs);
         c = ( tan (M_PI * Wb / 2.0) - 1.0) / ( tan ( M_PI * Wb / 2.0 ) + 1.0 );
-        c_old = c;
+
+        WIDTH_old = WIDTH;
     }
 
     /* Center frequency parameter calculation */
@@ -70,37 +71,37 @@ float *autowah_sbs (float *x, float Wb, float MIX) {
 
     /* Subtract the allpass output from the input to produce a bandpassed output */
 
-    y = 0.5 * (*x - ap_y);
+    y = GAIN * 0.5 * (*x - ap_y);
 
     /* Apply mixing factor to input and output */
 
     *x = *x * (1.0 - MIX);
     y = y * MIX;
 
-    OUT = 1.0 * (*x + y);
+    OUT = (*x + y);
 
     return &OUT;
 }
 
 
-float envelopeDetection(float *x) {
+static inline float envelopeDetection(float *x, float pedalLow, float pedalHigh, float SENSITIVITY) {
 
 
     /* Envelope detection algorithm */
 
-    x_n = *x**x; /* Square the input */
+    x_n = (*x**x) * SENSITIVITY; /* Square the input */
 
-    for (k = 0; k < N_sos; k++) {
+    for (k = 0; k < N_sos_smooth; k++) {
 
-             y_n = s1[k][1] + sos_smooth[k][0] * x_n ;
+             y_n = v1[k][1] + num_smooth[k][0] * x_n ;
 
-        s1[k][0] = s2[k][1] + sos_smooth[k][1] * x_n - sos_smooth[k][4] * y_n;
+        v1[k][0] = v2[k][1] + num_smooth[k][1] * x_n - den_smooth[k][1] * y_n;
 
-        s2[k][0] = sos_smooth[k][2] * x_n - sos_smooth[k][5] * y_n;
+        v2[k][0] = num_smooth[k][2] * x_n - den_smooth[k][2] * y_n;
 
-        s1[k][1] = s1[k][0];
+        v1[k][1] = v1[k][0];
 
-        s2[k][1] = s2[k][0];
+        v2[k][1] = v2[k][0];
 
         x_n = y_n;
     }
@@ -108,8 +109,8 @@ float envelopeDetection(float *x) {
     /* Scale the envelope to calculate and normalize the center frequency */
 
 
-    //fc = 100 + 2000 * sqrt(2*y_n);
-    fc = 200 + 2000 * atan(2* sqrt(2*y_n)); // Choosing atan to limit freq. at 2600
+    //fc = pedalLow + pedalHigh *  sqrt(2*y_n);
+    fc = pedalLow + pedalHigh * atan( sqrt(2*y_n)); // Choosing atan to limit freq. at 2600
 
     return fc;
 }
