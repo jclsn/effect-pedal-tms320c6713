@@ -38,7 +38,7 @@
 
 extern MCBSP_Handle DSK6713_AIC23_DATAHANDLE;
 static Uint32 CODECEventId;
-Uint32 fs=DSK6713_AIC23_FREQ_44KHZ;     //for sampling frequency
+Uint32 fs=DSK6713_AIC23_FREQ_48KHZ;     //for sampling frequency
 #define MIC 0x0015
 #define LINE 0x0011
 
@@ -55,11 +55,10 @@ AIC23_DATA AIC23_data;
 
 /* Global variables */
 
-unsigned int Fs = 44100;
 float IN = 0, OUT = 0;
 float *sample = &IN;
 short fb = 200;               // Width of passband in Hz
-float Wb =  200.0 * 2.0 / 44100.0;       // Calculate normalized passband width
+float Wb =  200.0 * 2.0 / Fs;       // Calculate normalized passband width
 float MIX = 1.0;
 
 Uint16 inputsource = MIC;
@@ -81,7 +80,7 @@ void intser_McBSP1()
         /* Apply Autowah sample-by-sample */
 
 	    if(effect & AUTOWAH)
-            sample = autowah_sbs (sample, 200, 200, 2500, /*SENSE:*/ 2.0, /* GAIN:*/1.0, /*MIX*/ 0.9);
+            sample = autowah_sbs (sample, 200, 200, 2500, /*SENSE:*/ 4.0, /* GAIN:*/1.0, /*MIX*/ 0.99);
 
 	    /* Apply Vibrato filter sample-by-sample */
 

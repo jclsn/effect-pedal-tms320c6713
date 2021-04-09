@@ -2,6 +2,7 @@
 
 /* Define PI as it is not included in Math.h */
 #define M_PI 3.1415926535897931
+#define Fs 48000.0
 
 /* Effect types */
 
@@ -23,7 +24,6 @@
 
 extern short effect;
 extern float IN, OUT;
-extern unsigned int Fs;
 
 /* Function prototype */
 

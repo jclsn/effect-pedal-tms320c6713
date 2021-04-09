@@ -23,13 +23,17 @@
 float v1[4][2] = {{0,0},{0,0}, {0,0}, {0,0}};
 float v2[4][2] = {{0,0},{0,0}, {0,0}, {0,0}};
 
-float c = 1.0, d, WIDTH_old = 0.0;
+float c = 1.0, c2 = 1.0, d, WIDTH_old = 0.0;
 float xh[2] = {0, 0};
 float xh_new = 0.0;
+float xh_new2 = 0.0;
 float ap_y;
 float y, x_n, y_n, Wc, fc;
 short k;
-
+float Ts = 1 / Fs;
+float x_old = 0.0;
+float RATE_old = 0.0;
+float y_ap2 = 0.0;
 
 float *autowah_sbs (float *x, float WIDTH, float pedalLow, float pedalHigh, float SENSITIVITY, float GAIN, float MIX) {
 
@@ -41,10 +45,10 @@ float *autowah_sbs (float *x, float WIDTH, float pedalLow, float pedalHigh, floa
      *  MIX is the mixing factor (max = 1)
      */
 
-    //GAIN = pow(10, GAIN/20);
-    fc = envelopeDetection(x, pedalLow, pedalHigh, SENSITIVITY);
+    envelopeDetection(x, pedalLow, pedalHigh, SENSITIVITY);
+    //envelopeDetection2(x, pedalLow, pedalHigh, SENSITIVITY, 8.0);
 
-    Wc = fc * (2.0 / (float) Fs);
+    Wc = fc * (2.0 * (float) Ts);
 
     /* Bandpass width parameter calculation */
 
@@ -61,8 +65,8 @@ float *autowah_sbs (float *x, float WIDTH, float pedalLow, float pedalHigh, floa
 
    /* Calculate next xh value and allpass output */
 
-    xh_new = (float) ( *x          - d * ( 1.0 - c ) * xh[0] + c * xh[1] );
-    ap_y   = (float) (-c * xh_new + d * ( 1.0 - c ) * xh[0] + xh[1]   );
+    xh_new =  ( *x          - d * ( 1.0 - c ) * xh[0] + c * xh[1] );
+    ap_y   =  (-c * xh_new + d * ( 1.0 - c ) * xh[0] + xh[1]   );
 
     /* Add new delay to delay vector and shift old delay by one */
 
@@ -109,8 +113,28 @@ static inline float envelopeDetection(float *x, float pedalLow, float pedalHigh,
     /* Scale the envelope to calculate and normalize the center frequency */
 
 
-    //fc = pedalLow + pedalHigh *  sqrt(2*y_n);
-    fc = pedalLow + pedalHigh * atan( sqrt(2*y_n)); // Choosing atan to limit freq. at 2600
+    fc = pedalLow + pedalHigh *  sqrt(2*y_n);
+    //fc = pedalLow + pedalHigh * atan( sqrt(2*y_n)); // Choosing atan to limit freq. at 2600
 
     return fc;
 }
+
+
+static inline void envelopeDetection2(float *x, float pedalLow, float pedalHigh, float SENSE, float RATE)
+{
+
+    if(RATE != RATE_old) {
+        c2 = (tan(M_PI * (RATE/Fs)) - 1) / (tan(M_PI * (RATE/Fs)) + 1);
+        RATE_old = RATE;
+    }
+    x_n = *x **x;
+
+    xh_new2 = x_n - c2*x_old;
+    y_ap2 = c2 * xh_new2 + x_old;
+    x_old = xh_new2;
+    y_n = 0.5 * (x_n + y_ap2);
+
+    fc = pedalLow + pedalHigh *  sqrt(2*y_n);
+    //fc = pedalLow + pedalHigh * atan( sqrt(2*y_n)); // Choosing atan to limit freq. at 2600
+}
+
